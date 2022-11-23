@@ -45,6 +45,9 @@
 import { computed, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
+import sha1 from "sha1";
+import {loginCheck, logoutCheck} from "../api";
+import {ElMessage} from "element-plus";
 export default {
     setup() {
         const username = localStorage.getItem("ms_username");
@@ -66,10 +69,18 @@ export default {
         // 用户名下拉菜单选择事件
         const router = useRouter();
         const handleCommand = (command) => {
-            if (command == "loginout") {
-                localStorage.removeItem("ms_username");
-                router.push("/login");
-            } else if (command == "user") {
+            if (command === "loginout") {
+                logoutCheck().then((res)=>{
+                    if (res.code === 0) {
+                        router.push("/login");
+                        localStorage.removeItem("token");
+                        localStorage.removeItem("ms_username");
+                    } else {
+                        ElMessage.error(res.msg);
+                        return false;
+                    }
+                });
+            } else if (command === "user") {
                 router.push("/user");
             }
         };

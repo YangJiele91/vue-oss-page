@@ -1,14 +1,18 @@
 import axios from 'axios';
+import router from "../router";
 
 const service = axios.create({
     // process.env.NODE_ENV === 'development' 来判断是否开发环境
     // easy-mock服务挂了，暂时不使用了
-    // baseURL: 'https://www.easy-mock.com/mock/592501a391470c0ac1fab128',
+    baseURL: '/api',
     timeout: 5000
 });
 
 service.interceptors.request.use(
     config => {
+        if (localStorage.getItem("token")) {
+            config.headers.Authorization = localStorage.getItem("token");
+        }
         return config;
     },
     error => {
@@ -26,6 +30,11 @@ service.interceptors.response.use(
         }
     },
     error => {
+        if (error.response) {
+            if (error.response.status === 401 || error.response.status === 403) {
+                router.push("/login");
+            }
+        }
         console.log(error);
         return Promise.reject();
     }

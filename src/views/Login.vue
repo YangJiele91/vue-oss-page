@@ -19,9 +19,8 @@
                     </el-input>
                 </el-form-item>
                 <div class="login-btn">
-                    <el-button type="primary" @click="submitForm()">登录</el-button>
+                    <el-button type="primary" @click="submitForm()" :loading="loading">登录</el-button>
                 </div>
-                <p class="login-tips">Tips : 用户名和密码随便填。</p>
             </el-form>
         </div>
     </div>
@@ -32,13 +31,16 @@ import { ref, reactive } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
+import sha1 from "sha1";
+import {loginCheck} from "../api";
 
 export default {
     setup() {
+        const loading = ref(false  );
         const router = useRouter();
         const param = reactive({
-            username: "admin",
-            password: "123123",
+            username: "",
+            password: "",
         });
 
         const rules = {
@@ -55,13 +57,28 @@ export default {
         };
         const login = ref(null);
         const submitForm = () => {
+            loading.value = true;
             login.value.validate((valid) => {
                 if (valid) {
-                    ElMessage.success("登录成功");
-                    localStorage.setItem("ms_username", param.username);
-                    router.push("/");
+                    let para = {
+                        username: param.username,
+                        password: sha1(param.password),
+                    }
+                    loginCheck(para).then((res)=>{
+                        if (res.code === 0) {
+                            ElMessage.success("登录成功");
+                            localStorage.setItem("token", res.data);
+                            localStorage.setItem("ms_username", param.username);
+                            router.push("/");
+                        } else {
+                            ElMessage.error(res.msg);
+                            return false;
+                        }
+                      loading.value=false;
+                    });
                 } else {
-                    ElMessage.error("登录成功");
+                    ElMessage.error("登录失败");
+                    loading.value=false;
                     return false;
                 }
             });
@@ -74,6 +91,7 @@ export default {
             param,
             rules,
             login,
+            loading,
             submitForm,
         };
     },
